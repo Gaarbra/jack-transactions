@@ -25,14 +25,12 @@ class Ledger:
         self.connection = self.engine.connect()
 
     def get_all_account_ids(self):
-        '''
-        This function is used inside of the random_transfers.py script.
-        '''
         with self.connection.begin():
             sql = text('SELECT account_id FROM accounts;')
             logging.debug(sql)
             results = self.connection.execute(sql)
-            return [row[0] for row in results.all()]
+            account_ids = [row[0] for row in results.all()]
+        return account_ids
 
     def create_account(self, name):
         '''
@@ -87,14 +85,12 @@ class Ledger:
         2. This code uses f-strings instead of bind parameters.
             This can result in SQL injection vulnerabilities.
         '''
-
         with self.connection.begin():
             # lock the balances table so concurrent transfers can't cause lost updates
             sql = text('LOCK TABLE balances IN ACCESS EXCLUSIVE MODE;')
             logging.debug(sql)
             self.connection.execute(sql)
-
-
+        
             # insert the transaction
             sql = text(f'INSERT INTO transactions (debit_account_id, credit_account_id, amount) VALUES ({debit_account_id}, {credit_account_id}, {amount});')
             logging.debug(sql)
@@ -111,7 +107,6 @@ class Ledger:
             logging.debug(sql)
             self.connection.execute(sql)
 
-            # you need to update the credit account balance as well
             # update the credit account balance
             sql = text(f'SELECT balance FROM balances WHERE account_id = {credit_account_id};')
             logging.debug(sql)
